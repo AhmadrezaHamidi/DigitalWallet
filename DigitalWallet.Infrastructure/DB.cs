@@ -6,18 +6,20 @@
 //using System.Text;
 //using System.Threading.Tasks;
 
-//namespace DigitalWallet.Infrastructure
-//{
-//    public class DB: DbContext
-//    {
-//        public DB(DbContextOptions<DB> options) : base(options)
-//        {
+using DigitalWallet.Core.Entities;
 
-//        }
-//        public DbSet<Wallet> Wallets { get; set; }
-//        public DbSet<Transaction> Transactions { get; set; }
-//    }
-//}
+namespace DigitalWallet.Infrastructure
+{
+    public class DB : DbContext
+    {
+        public DB(DbContextOptions<DB> options) : base(options)
+        {
+
+        }
+        public DbSet<Wallet> Wallets { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
+    }
+}
 
 
 ///Tedstsam benevice 

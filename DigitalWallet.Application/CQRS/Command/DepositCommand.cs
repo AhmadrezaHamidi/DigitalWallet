@@ -1,5 +1,6 @@
 ﻿using DigitalWallet.Core.Entities;
 using DigitalWallet.Infrastructure;
+using DIgitalWallet.Commmon.Exceptions;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -9,44 +10,46 @@ using System.Threading.Tasks;
 
 namespace DigitalWallet.Application.CQRS.Command
 {
-    public class DepositCommand : IRequest<Unit>
+
+    /// <summary>
+    /// Command va Command Handler behtare joda beshe 
+    /// </summary>
+
+    //وقتی یه مند به async m awaite چیائده سازی میشه باید تا لانتها async باشه 
+
+    public record DepositCommand(int walletId, decimal amount) : IRequest<string>
+    {}
+
+    public class DepositCommandHandler : IRequestHandler<DepositCommand, string>
     {
-        public int WalletId { get; set; }
-        public decimal Amount { get; set; }
+        private readonly DB _context;
 
-        public DepositCommand(int walletId, decimal amount)
+        public DepositCommandHandler(DB context)
         {
-            WalletId = walletId;
-            Amount = amount;
+            _context = context;
         }
-        public class DepositCommandHandler : IRequestHandler<DepositCommand,Unit>
+
+        public async Task<string> Handle(DepositCommand request, CancellationToken cancellationToken)
         {
-            private readonly DB _context;
+            var wallet = await _context.Wallets.FindAsync(request.walletId);
 
-            public DepositCommandHandler(DB context)
+            if (wallet is null)
+                throw new AppException("Wallet not found");
+
+            wallet.Deposit(request.amount);
+
+            await _context.Transactions.AddAsync(new Transaction
             {
-                _context = context;
-            }
+                WalletId = request.walletId,
+                Amount = request.amount,
+                Date = DateTime.Now,
+                Type = "Deposit",
+                Status = "Completed"
+            });
 
-            async Task<Unit> IRequestHandler<DepositCommand, Unit>.Handle(DepositCommand request, CancellationToken cancellationToken)
-            {
-                var wallet = await _context.Wallets.FindAsync(request.WalletId);
-                if (wallet != null)
-                {
-                    wallet.Deposit(request.Amount);
-                    _context.Transactions.Add(new Transaction
-                    {
-                        WalletId = request.WalletId,
-                        Amount = request.Amount,
-                        Date = DateTime.Now,
-                        Type = "Deposit",
-                        Status = "Completed"
-                    });
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
+            await _context.SaveChangesAsync(cancellationToken);
 
-                return Unit.Value;
-            }
+            return "Deposit successful";
         }
     }
 }
